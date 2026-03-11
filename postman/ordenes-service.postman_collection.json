@@ -1,0 +1,307 @@
+{
+  "info": {
+    "name": "PR2 - Ordenes Service",
+    "_postman_id": "4c9ba0fc-c4f4-4ce7-b23c-a173287bb96e",
+    "description": "Coleccion para validar productos-service y ordenes-service en la arquitectura de microservicios.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1) Crear producto",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Laptop Pro\",\n  \"descripcion\": \"16GB RAM\",\n  \"precio\": 1500.0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlProductos}}/productos",
+          "host": [
+            "{{baseUrlProductos}}"
+          ],
+          "path": [
+            "productos"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Respuesta contiene id de producto', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.be.a('string').and.not.empty;",
+              "  pm.collectionVariables.set('productoId', body.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2) Crear orden (flujo feliz)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuarioId\": \"user-123\",\n  \"productoId\": \"{{productoId}}\",\n  \"cantidad\": 2\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlOrdenes}}/ordenes",
+          "host": [
+            "{{baseUrlOrdenes}}"
+          ],
+          "path": [
+            "ordenes"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Orden creada con id y estado', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.estado).to.be.oneOf(['CREADA', 'PAGADA', 'CANCELADA']);",
+              "  pm.collectionVariables.set('ordenId', body.id);",
+              "});",
+              "",
+              "pm.test('precioTotal calculado', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.precioTotal).to.be.a('number');",
+              "  pm.expect(body.precioTotal).to.eql(3000);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3) Obtener orden por ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlOrdenes}}/ordenes/{{ordenId}}",
+          "host": [
+            "{{baseUrlOrdenes}}"
+          ],
+          "path": [
+            "ordenes",
+            "{{ordenId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ID de orden coincide', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.eql(pm.collectionVariables.get('ordenId'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4) Obtener ordenes por usuario",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlOrdenes}}/ordenes/usuario/user-123",
+          "host": [
+            "{{baseUrlOrdenes}}"
+          ],
+          "path": [
+            "ordenes",
+            "usuario",
+            "user-123"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Respuesta es arreglo', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5) Actualizar estado de orden",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado\": \"PAGADA\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlOrdenes}}/ordenes/{{ordenId}}/status",
+          "host": [
+            "{{baseUrlOrdenes}}"
+          ],
+          "path": [
+            "ordenes",
+            "{{ordenId}}",
+            "status"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Estado actualizado a PAGADA', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.estado).to.eql('PAGADA');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6) Crear orden con producto inexistente (negativa)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuarioId\": \"user-404\",\n  \"productoId\": \"producto-no-existe\",\n  \"cantidad\": 1\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlOrdenes}}/ordenes",
+          "host": [
+            "{{baseUrlOrdenes}}"
+          ],
+          "path": [
+            "ordenes"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 404', function () {",
+              "  pm.response.to.have.status(404);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7) Obtener orden inexistente (negativa)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlOrdenes}}/ordenes/no-existe",
+          "host": [
+            "{{baseUrlOrdenes}}"
+          ],
+          "path": [
+            "ordenes",
+            "no-existe"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 404', function () {",
+              "  pm.response.to.have.status(404);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrlProductos",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "baseUrlOrdenes",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "productoId",
+      "value": ""
+    },
+    {
+      "key": "ordenId",
+      "value": ""
+    }
+  ]
+}

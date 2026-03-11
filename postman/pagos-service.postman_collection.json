@@ -1,0 +1,278 @@
+{
+  "info": {
+    "name": "PR2 - Pagos + Ordenes Flow",
+    "_postman_id": "6cb1f8da-5bff-4ce8-b58f-1f0f573863d5",
+    "description": "Coleccion para validar el flujo de pagosservice con ordenesservice: crear orden, procesar pago, verificar orden pagada y reembolso.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1) Crear orden",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuarioId\": \"user-pagos-01\",\n  \"productoId\": \"{{productoId}}\",\n  \"cantidad\": 1\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlOrdenes}}/ordenes",
+          "host": [
+            "{{baseUrlOrdenes}}"
+          ],
+          "path": [
+            "ordenes"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Se devuelve id de orden', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.be.a('string').and.not.empty;",
+              "  pm.collectionVariables.set('ordenId', body.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2) Procesar pago",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ordenId\": \"{{ordenId}}\",\n  \"monto\": 100.0,\n  \"metodoPago\": \"TARJETA\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlPagos}}/pagos/procesar",
+          "host": [
+            "{{baseUrlPagos}}"
+          ],
+          "path": [
+            "pagos",
+            "procesar"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Pago creado con id y ordenId esperado', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.ordenId).to.eql(pm.collectionVariables.get('ordenId'));",
+              "  pm.collectionVariables.set('pagoId', body.id);",
+              "});",
+              "",
+              "pm.test('Estado de pago inicial es PROCESADO', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.estado).to.eql('PROCESADO');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3) Obtener pago por ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlPagos}}/pagos/{{pagoId}}",
+          "host": [
+            "{{baseUrlPagos}}"
+          ],
+          "path": [
+            "pagos",
+            "{{pagoId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Id de pago coincide', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.eql(pm.collectionVariables.get('pagoId'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4) Obtener pago por Orden",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlPagos}}/pagos/orden/{{ordenId}}",
+          "host": [
+            "{{baseUrlPagos}}"
+          ],
+          "path": [
+            "pagos",
+            "orden",
+            "{{ordenId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Orden del pago coincide', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.ordenId).to.eql(pm.collectionVariables.get('ordenId'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5) Verificar orden en estado PAGADA",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlOrdenes}}/ordenes/{{ordenId}}",
+          "host": [
+            "{{baseUrlOrdenes}}"
+          ],
+          "path": [
+            "ordenes",
+            "{{ordenId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Estado de la orden es PAGADA o COMPLETADA', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.estado).to.be.oneOf(['PAGADA', 'COMPLETADA']);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6) Reembolsar pago",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrlPagos}}/pagos/{{pagoId}}/reembolso",
+          "host": [
+            "{{baseUrlPagos}}"
+          ],
+          "path": [
+            "pagos",
+            "{{pagoId}}",
+            "reembolso"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Estado del pago cambia a REEMBOLSADO', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.estado).to.eql('REEMBOLSADO');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrlPagos",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "baseUrlOrdenes",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "productoId",
+      "value": "REEMPLAZAR_POR_PRODUCTO_REAL"
+    },
+    {
+      "key": "ordenId",
+      "value": ""
+    },
+    {
+      "key": "pagoId",
+      "value": ""
+    }
+  ]
+}

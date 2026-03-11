@@ -1,0 +1,24 @@
+CLOUDWATCH
+
+docker-compose up
+docker logs localstack-main
+
+aws cli
+aws configure
+Pide el access key y avanzamos
+
+aws config
+AWS access key: Test
+AWS secret key: Test
+default region name: us-east-1
+default output format: json
+
+crear un log group (cloudwatch logs)
+aws --endpoint-url=http://localhost:4566 logs describe-log-groups
+aws --endpoint-url=http://localhost:4566 logs create-log-group --log-group-name my /mi-app-test/logs
+
+aws --endpoint-url=http://localhost:4566 logs create-log-stream \
+--log-group-name my/mi-app-test/logs \
+--log-stream-name my-app-test-local
+
+aws

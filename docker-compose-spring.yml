@@ -1,0 +1,90 @@
+services:
+  eureka-server:
+    build:
+      context: ./eurekaserver
+      dockerfile: dockerfile
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8761"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+    networks:
+      - microservicios-net
+
+  api-gateway:
+    build:
+      context: ./apigateway
+      dockerfile: dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - microservicios-net
+
+  productos-service:
+    build:
+      context: ./productservice
+      dockerfile: dockerfile
+    container_name: productos-service
+    ports:
+      - "8081:8081"
+    environment:
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
+      - MONGODB_URI=mongodb://mongo:27017/db_productos
+      - CLOUDWATCH_ENDPOINT=http://localstack:4566
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - microservicios-net
+
+  ordenes-service:
+    build:
+      context: ./ordenesservice
+      dockerfile: dockerfile
+    container_name: ordenes-service
+    ports:
+      - "8082:8082"
+    environment:
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
+      - MONGODB_URI=mongodb://mongo:27017/db_ordenes
+      - CLOUDWATCH_ENDPOINT=http://localstack:4566
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      productos-service:
+        condition: service_started
+    networks:
+      - microservicios-net
+
+  pagos-service:
+    build:
+      context: ./pagosservice
+      dockerfile: dockerfile
+    container_name: pagos-service
+    ports:
+      - "8083:8083"
+    environment:
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
+      - MONGODB_URI=mongodb://mongo:27017/db_pagos
+      - CLOUDWATCH_ENDPOINT=http://localstack:4566
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      ordenes-service:
+        condition: service_started
+    networks:
+      - microservicios-net
+
+networks:
+  microservicios-net:
+    external: true

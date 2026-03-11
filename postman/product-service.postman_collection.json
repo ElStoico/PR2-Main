@@ -1,0 +1,271 @@
+{
+  "info": {
+    "name": "PR2 - Product Service",
+    "_postman_id": "f1a5ac4b-58a8-4ee3-9048-53ecf3d9f7af",
+    "description": "Coleccion para validar CRUD de productservice.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1) Crear producto",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Mouse Gamer\",\n  \"descripcion\": \"Mouse inalambrico RGB\",\n  \"precio\": 89.9\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlProductos}}/productos",
+          "host": [
+            "{{baseUrlProductos}}"
+          ],
+          "path": [
+            "productos"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('Se devuelve id de producto', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.be.a('string').and.not.empty;",
+              "  pm.collectionVariables.set('productoId', body.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2) Listar productos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlProductos}}/productos",
+          "host": [
+            "{{baseUrlProductos}}"
+          ],
+          "path": [
+            "productos"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Respuesta es arreglo', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3) Obtener producto por ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlProductos}}/productos/{{productoId}}",
+          "host": [
+            "{{baseUrlProductos}}"
+          ],
+          "path": [
+            "productos",
+            "{{productoId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ID coincide con el creado', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.id).to.eql(pm.collectionVariables.get('productoId'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4) Actualizar producto",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Mouse Gamer Pro\",\n  \"descripcion\": \"Mouse inalambrico RGB 2.4Ghz\",\n  \"precio\": 99.9\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlProductos}}/productos/{{productoId}}",
+          "host": [
+            "{{baseUrlProductos}}"
+          ],
+          "path": [
+            "productos",
+            "{{productoId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Se actualiza el nombre', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.nombre).to.eql('Mouse Gamer Pro');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5) Eliminar producto",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlProductos}}/productos/{{productoId}}",
+          "host": [
+            "{{baseUrlProductos}}"
+          ],
+          "path": [
+            "productos",
+            "{{productoId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 204', function () {",
+              "  pm.response.to.have.status(204);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6) Obtener producto eliminado (negativa)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlProductos}}/productos/{{productoId}}",
+          "host": [
+            "{{baseUrlProductos}}"
+          ],
+          "path": [
+            "productos",
+            "{{productoId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 404', function () {",
+              "  pm.response.to.have.status(404);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7) Obtener producto inexistente (negativa)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlProductos}}/productos/{{productoInexistenteId}}",
+          "host": [
+            "{{baseUrlProductos}}"
+          ],
+          "path": [
+            "productos",
+            "{{productoInexistenteId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 404', function () {",
+              "  pm.response.to.have.status(404);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrlProductos",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "productoId",
+      "value": ""
+    },
+    {
+      "key": "productoInexistenteId",
+      "value": "producto-no-existe"
+    }
+  ]
+}
