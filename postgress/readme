@@ -1,0 +1,19 @@
+
+
+##Comando para crear tabla 
+
+docker exec -i 8e68f102b84a psql -U postgres -d failed_products_db < products_retry_jobs-table.sql
+
+##DROP TABLE
+
+DROP TABLE IF EXISTS public.name-table;
+
+
+
+## Pretty SELECT 
+
+SELECT
+    id,
+    jsonb_pretty(request_data) AS request,
+    jsonb_pretty(response_data) AS response, attempt , status
+FROM public.products_retry_jobs;

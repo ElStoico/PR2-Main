@@ -57,6 +57,7 @@ services:
     environment:
       - EUREKA_SERVER_URL=http://eureka-server:8761/eureka
       - MONGODB_URI=mongodb://mongo:27017/db_ordenes
+      - KAFKA_BOOTSTRAP_SERVERS=host.docker.internal:9092
       - CLOUDWATCH_ENDPOINT=http://localstack:4566
     depends_on:
       eureka-server:

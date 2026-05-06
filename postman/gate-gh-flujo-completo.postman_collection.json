@@ -1,0 +1,341 @@
+{
+  "info": {
+    "name": "PR2 - Flujo Completo Gate G-H",
+    "_postman_id": "a8d30282-218d-4ff3-86cb-8c8f5e4d857f",
+    "description": "Coleccion para validar flujo completo: producto -> orden -> inventario -> pago -> orden pagada. Incluye caso negativo de pago con orden invalida.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1) Crear producto de prueba",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"GateGH Product Postman\",\n  \"descripcion\": \"Validacion flujo completo\",\n  \"precio\": {{precioProducto}},\n  \"stock\": {{stockInicial}}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlProductos}}/productos",
+          "host": [
+            "{{baseUrlProductos}}"
+          ],
+          "path": [
+            "productos"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 201', function () {", 
+              "  pm.response.to.have.status(201);", 
+              "});", 
+              "", 
+              "const body = pm.response.json();", 
+              "pm.collectionVariables.set('productoId', body.id);", 
+              "pm.test('Producto creado con id', function () {", 
+              "  pm.expect(body.id).to.be.a('string').and.not.empty;", 
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2) Crear orden",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuarioId\": \"{{usuarioId}}\",\n  \"productoId\": \"{{productoId}}\",\n  \"cantidad\": {{cantidadOrden}}\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlOrdenes}}/ordenes",
+          "host": [
+            "{{baseUrlOrdenes}}"
+          ],
+          "path": [
+            "ordenes"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 201', function () {", 
+              "  pm.response.to.have.status(201);", 
+              "});", 
+              "", 
+              "const body = pm.response.json();", 
+              "pm.collectionVariables.set('ordenId', body.id);", 
+              "pm.test('Orden creada con id', function () {", 
+              "  pm.expect(body.id).to.be.a('string').and.not.empty;", 
+              "});", 
+              "", 
+              "pm.test('Precio total calculado', function () {", 
+              "  const esperado = Number(pm.collectionVariables.get('precioProducto')) * Number(pm.collectionVariables.get('cantidadOrden'));", 
+              "  pm.expect(body.precioTotal).to.eql(esperado);", 
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3) Verificar stock decrementado",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlProductos}}/productos/{{productoId}}",
+          "host": [
+            "{{baseUrlProductos}}"
+          ],
+          "path": [
+            "productos",
+            "{{productoId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {", 
+              "  pm.response.to.have.status(200);", 
+              "});", 
+              "", 
+              "const body = pm.response.json();", 
+              "const esperado = Number(pm.collectionVariables.get('stockInicial')) - Number(pm.collectionVariables.get('cantidadOrden'));", 
+              "pm.test('Stock decrementado por inventario_event', function () {", 
+              "  pm.expect(body.stock).to.eql(esperado);", 
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4) Procesar pago",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ordenId\": \"{{ordenId}}\",\n  \"monto\": {{montoPago}},\n  \"metodoPago\": \"TARJETA\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlPagos}}/pagos/procesar",
+          "host": [
+            "{{baseUrlPagos}}"
+          ],
+          "path": [
+            "pagos",
+            "procesar"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 201', function () {", 
+              "  pm.response.to.have.status(201);", 
+              "});", 
+              "", 
+              "const body = pm.response.json();", 
+              "pm.collectionVariables.set('pagoId', body.id);", 
+              "pm.test('Pago creado y asociado a la orden', function () {", 
+              "  pm.expect(body.id).to.be.a('string').and.not.empty;", 
+              "  pm.expect(body.ordenId).to.eql(pm.collectionVariables.get('ordenId'));", 
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5) Verificar pago por orden",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlPagos}}/pagos/orden/{{ordenId}}",
+          "host": [
+            "{{baseUrlPagos}}"
+          ],
+          "path": [
+            "pagos",
+            "orden",
+            "{{ordenId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {", 
+              "  pm.response.to.have.status(200);", 
+              "});", 
+              "", 
+              "const body = pm.response.json();", 
+              "pm.test('Pago encontrado para la orden', function () {", 
+              "  pm.expect(body.ordenId).to.eql(pm.collectionVariables.get('ordenId'));", 
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6) Verificar orden en estado PAGADA",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrlOrdenes}}/ordenes/{{ordenId}}",
+          "host": [
+            "{{baseUrlOrdenes}}"
+          ],
+          "path": [
+            "ordenes",
+            "{{ordenId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 200', function () {", 
+              "  pm.response.to.have.status(200);", 
+              "});", 
+              "", 
+              "const body = pm.response.json();", 
+              "pm.test('Orden actualizada a PAGADA', function () {", 
+              "  pm.expect(body.estado).to.eql('PAGADA');", 
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7) Negativa: pago con orden invalida (espera 502)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ordenId\": \"orden-invalida-gategh\",\n  \"monto\": 10.0,\n  \"metodoPago\": \"TARJETA\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrlPagos}}/pagos/procesar",
+          "host": [
+            "{{baseUrlPagos}}"
+          ],
+          "path": [
+            "pagos",
+            "procesar"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code es 502', function () {", 
+              "  pm.response.to.have.status(502);", 
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrlProductos",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "baseUrlOrdenes",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "baseUrlPagos",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "usuarioId",
+      "value": "user-gategh-postman"
+    },
+    {
+      "key": "precioProducto",
+      "value": "200"
+    },
+    {
+      "key": "stockInicial",
+      "value": "10"
+    },
+    {
+      "key": "cantidadOrden",
+      "value": "2"
+    },
+    {
+      "key": "montoPago",
+      "value": "400"
+    },
+    {
+      "key": "productoId",
+      "value": ""
+    },
+    {
+      "key": "ordenId",
+      "value": ""
+    },
+    {
+      "key": "pagoId",
+      "value": ""
+    }
+  ]
+}

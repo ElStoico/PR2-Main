@@ -1,0 +1,133 @@
+{
+  "info": {
+    "name": "kafkasservice – Retry Flow",
+    "_postman_id": "kafkasservice-retry-flow-v1",
+    "description": "Colección para probar el flujo de reintentos de productos: éxito directo, fallback a Kafka y publicación manual al tópico.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8085",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1 – Flujo exitoso (almacén arriba)",
+      "item": [
+        {
+          "name": "Crear producto – éxito directo",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/kafka-api/create-product",
+              "host": ["{{base_url}}"],
+              "path": ["kafka-api", "create-product"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"prod-ok-001\",\n  \"name\": \"Cuaderno A4\",\n  \"description\": \"Cuaderno rayado 100 hojas\",\n  \"price\": 12.5,\n  \"quantity\": 50,\n  \"category\": \"Utiles\",\n  \"brand\": \"Norma\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 – Flujo de fallo y reintento (almacén abajo)",
+      "item": [
+        {
+          "name": "Crear producto – fallback a Kafka (almacén debe estar apagado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/kafka-api/create-product",
+              "host": ["{{base_url}}"],
+              "path": ["kafka-api", "create-product"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"prod-fail-001\",\n  \"name\": \"Lapiz HB\",\n  \"description\": \"Caja x12\",\n  \"price\": 8.9,\n  \"quantity\": 100,\n  \"category\": \"Utiles\",\n  \"brand\": \"Faber\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear producto – fallo con datos mínimos",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/kafka-api/create-product",
+              "host": ["{{base_url}}"],
+              "path": ["kafka-api", "create-product"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"prod-fail-002\",\n  \"name\": \"Borrador\",\n  \"price\": 5\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 – Publicación directa al tópico (simula mensaje externo)",
+      "item": [
+        {
+          "name": "Enviar producto directo al tópico modelo-productos-topico",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/kafka-api/enviar",
+              "host": ["{{base_url}}"],
+              "path": ["kafka-api", "enviar"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"prod-topic-001\",\n  \"name\": \"Regla 30cm\",\n  \"description\": \"Plastica transparente\",\n  \"price\": 6.75,\n  \"quantity\": 20,\n  \"category\": \"Utiles\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 – Verificación en base de datos (SQL para copiar)",
+      "item": [
+        {
+          "name": "[INFO] Ver todos los jobs recientes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            },
+            "description": "No es un endpoint HTTP. Ejecuta esto en PowerShell para ver el estado:\n\ndocker exec -it postgres_retry_service psql -U postgres -d failed_products_db -c \"select product_id, status, attempt, current_step, next_run_at from products_retry_jobs order by created_at desc limit 10;\""
+          }
+        },
+        {
+          "name": "[INFO] Forzar reintento inmediato",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            },
+            "description": "Para adelantar el next_run_at y forzar reintento sin esperar 5 min:\n\ndocker exec -it postgres_retry_service psql -U postgres -d failed_products_db -c \"update products_retry_jobs set next_run_at=now(), status='FAILED' where product_id='prod-fail-001';\""
+          }
+        }
+      ]
+    }
+  ]
+}
