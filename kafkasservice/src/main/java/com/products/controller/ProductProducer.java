@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class ProductProducer {
 
-    @Value("${kafka.topic.productos}")
+    @Value("${kafka.topic.products}")
     private String topic;
 
     private final KafkaTemplate<String, ProductDto> kafkaTemplate;

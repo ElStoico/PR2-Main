@@ -20,4 +20,5 @@ public class ProductDto {
     private String subcategory;
     private String brand;
     private String supplier;
+    private String id;
 }
